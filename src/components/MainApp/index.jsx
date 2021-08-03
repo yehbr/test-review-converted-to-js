@@ -1,94 +1,78 @@
-import React, { useEffect } from 'react';
-import { Form } from 'react-bootstrap';
-import { InputNewTodo } from '../InputNewTodo';
+import React, { useState } from 'react';
+import { Form, Button } from 'react-bootstrap';
+import InputNewTodo from '../InputNewTodo';
 import UserSelect from '../UserSelect';
-import { connect, useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import styles from './MainApp.module.css';
-import { getUsers } from '../../store/usersSlice';
+import { addTodo, removeTodo, changeTodo } from '../../store/todosSlice';
 
-class Index extends React.Component {
-  constructor(props) {
-    super(props);
-    this.handleTodoTitle = (todoTitle) => {
-      this.setState({ todoTitle });
-    };
-    this.handleSubmitTodo = (todo) => {
-      this.props.addTodo(todo);
-    };
-    this.state = { todoTitle: '' };
-    this.allTodosIsDone = false;
-  }
-  render() {
-    const { todoTitle } = this.state;
-    // Чтобы работала проверка, выполнены ли все тудушки, мы не должны обращаться к глобальному свойству window, window работает напрямую с DOM, минуя реакт
+const MainApp = ({ todos, allTodosIsDone, users }) => {
+  const dispatch = useDispatch();
 
-    // window.allTodosIsDone = true;
+  // Вэлью инпута я не стал определять в стор редакса. Использую локальный стейт.
+  const [text, setText] = useState('');
+  const handleTodoTitle = (e) => {
+    setText(e.target.value);
+  };
 
-    // Проверка на все завершенные тудушки неправильно работала, плюс опять ссылались на глобальный объект window
-
-    // this.props.todos.map((t) => {
-    //   if (!t.isDone) {
-    //     window.allTodosIsDone = false;
-    //   } else {
-    //     window.allTodosIsDone = true;
-    //   }
-    // });
-
-    // Делаем проверку через every, если все элементы isDone у нас true и массив todos не пуст, то присваиваем классовой переменной нужное булевое значение, от которого будет рисоваться уже UI
-
-    if (
-      this.props.todos.every((i) => i.isDone) &
-      (this.props.todos.length !== 0)
-    ) {
-      this.allTodosIsDone = true;
-    } else {
-      this.allTodosIsDone = false;
+  const handleSubmitTodo = (e) => {
+    if (e.keyCode == 13) {
+      dispatch(addTodo(text));
+      setText('');
     }
+  };
 
-    return (
-      <div>
-        <Form.Check
-          type="checkbox"
-          label="all todos is done!"
-          checked={this.allTodosIsDone}
-          readOnly
-        />
-        <hr />
-        <InputNewTodo
-          todoTitle={todoTitle}
-          onChange={this.handleTodoTitle}
-          onSubmit={this.handleSubmitTodo}
-        />
-        {this.props.todos.map((t, idx) => (
-          <div className={styles.todo} key={idx}>
-            {t.title}
-            <UserSelect user={t.user} idx={idx} key={idx} />
+  return (
+    <div className={styles.main}>
+      <Form.Check
+        type="checkbox"
+        label="all todos is done!"
+        checked={allTodosIsDone}
+        readOnly
+      />
+      <hr />
+      <InputNewTodo
+        value={text}
+        onChange={handleTodoTitle}
+        onKeyDown={handleSubmitTodo}
+        placeholder="What needs to be done?"
+      />
+      {todos.map((i, idx) => (
+        <div className={styles.todo} key={idx}>
+          <div
+            className={styles.body}
+            style={i.isDone ? { textDecoration: 'line-through' } : null}
+          >
+            {i.text}
+          </div>
+          <div className={styles.footer}>
             <Form.Check
-              style={{ marginTop: -8, marginLeft: 5 }}
               type="checkbox"
-              checked={t.isDone}
-              onChange={(e) => {
-                const changedTodos = this.props.todos.map((t, index) => {
-                  const res = { ...t };
+              checked={i.isDone}
+              onChange={() => {
+                const changedTodos = todos.map((i, index) => {
+                  const res = { ...i };
                   if (index == idx) {
-                    res.isDone = !t.isDone;
+                    res.isDone = !i.isDone;
                   }
                   return res;
                 });
-                this.props.changeTodo(changedTodos);
+                dispatch(changeTodo(changedTodos));
               }}
             />
+            <UserSelect
+              user={i.user}
+              users={users}
+              todos={todos}
+              idx={idx}
+              key={idx}
+            />
+            <Button onClick={() => dispatch(removeTodo(i.id))}>Remove</Button>
           </div>
-        ))}
-      </div>
-    );
-  }
-}
-export default connect(
-  (state) => ({}),
-  (dispatch) => ({
-    addTodo: (todo) => dispatch({ type: 'ADD_TODO', payload: todo }),
-    changeTodo: (todos) => dispatch({ type: 'CHANGE_TODOS', payload: todos }),
-    removeTodo: (index) => dispatch({ type: 'REMOVE_TODOS', payload: index }),
-  })
-)(Index);
+        </div>
+      ))}
+    </div>
+  );
+};
+
+export default MainApp;

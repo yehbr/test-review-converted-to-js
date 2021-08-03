@@ -4,13 +4,15 @@ import { useSelector } from 'react-redux';
 import './App.css';
 
 function App() {
-  const todos = useSelector((state) => state.list.todos);
+  const { todos, allTodosIsDone } = useSelector((state) => state.todosList);
+  const { users } = useSelector((state) => state.usersList);
+
   return (
-    // туду лист для юзеров:
     <div className="App main">
-      <header className="App-header">TODO list with users:</header>
-      {/* MAIN APP: */}
-      <MainApp todos={todos} />
+      <header className="App-header">
+        <h1>TODO list with users</h1>
+      </header>
+      <MainApp todos={todos} users={users} allTodosIsDone={allTodosIsDone} />
       <footer className="App-footer">
         <a
           href="https://example.org"
@@ -22,5 +24,5 @@ function App() {
       </footer>
     </div>
   );
-};
+}
 export default App;
